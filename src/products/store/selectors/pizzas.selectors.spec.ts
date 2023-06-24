@@ -103,9 +103,36 @@ describe('Pizzas Selectors', () => {
     it('should return selected pizza as entitie', () => {
       let result: any;
       let params: any;
-
       store.dispatch(fromActions.loadPizzasSuccess({ payload: pizzas }));
-
+      store.dispatch({
+        type: '@ngrx/router-store/request',
+        payload: {
+          routerState: {
+            url: '',
+            queryParams: {},
+            params: {},
+          },
+          event: {
+            id: 1,
+            url: '/products/2',
+          },
+        },
+      });
+      store.dispatch({
+        type: '@ngrx/router-store/navigation',
+        payload: {
+          routerState: {
+            url: '/products/2',
+            queryParams: {},
+            params: { pizzaId: '2' },
+          },
+          event: {
+            id: 1,
+            url: '/products/2',
+            urlAfterRedirects: '/products/2',
+          },
+        },
+      });
       store.dispatch({
         type: '@ngrx/router-store/navigated',
         payload: {
@@ -114,18 +141,116 @@ describe('Pizzas Selectors', () => {
             queryParams: {},
             params: { pizzaId: '2' },
           },
-          event: {},
+          event: {
+            id: 1,
+            url: '/products/2',
+            urlAfterRedirects: '/products/2',
+          },
         },
       });
-
       store
         .select(fromRoot.getRouteState)
-        .subscribe((routerState) => (params = routerState.state.params));
+        .subscribe((routerState) => (params = routerState?.state.params));
+      expect(params).toEqual({ pizzaId: '2' });
       store
         .select(fromSelectors.getSelectedPizza)
-        .subscribe((selectedPizza) => (result = selectedPizza));
-
+        .subscribe((pizza) => (result = pizza));
       expect(result).toEqual(entities[2]);
+    });
+  });
+  describe('Get Visualised Pizza', () => {
+    it('should return selected pizza and new selected toppings', () => {
+      let result: any;
+      const toppings = [
+        { id: 1, name: 'Toppings #1' },
+        { id: 2, name: 'Toppings #2' },
+        { id: 3, name: 'Toppings #3' },
+      ];
+      store.dispatch(fromActions.loadPizzasSuccess({ payload: pizzas }));
+      store.dispatch(fromActions.loadToppingsSuccess({ payload: toppings }));
+      store.dispatch(fromActions.visualiseToppings({ payload: [2, 3, 4] }));
+
+      store.dispatch({
+        type: '@ngrx/router-store/request',
+        payload: {
+          routerState: {
+            url: '',
+            queryParams: {},
+            params: {},
+          },
+          event: {
+            id: 1,
+            url: '/products/3',
+          },
+        },
+      });
+      store.dispatch({
+        type: '@ngrx/router-store/navigation',
+        payload: {
+          routerState: {
+            url: '/products/3',
+            queryParams: {},
+            params: { pizzaId: '3' },
+          },
+          event: {
+            id: 1,
+            url: '/products/3',
+            urlAfterRedirects: '/products/3',
+          },
+        },
+      });
+      store.dispatch({
+        type: '@ngrx/router-store/navigated',
+        payload: {
+          routerState: {
+            url: '/products/3',
+            queryParams: {},
+            params: { pizzaId: '3' },
+          },
+          event: {
+            id: 1,
+            url: '/products/3',
+            urlAfterRedirects: '/products/3',
+          },
+        },
+      });
+      store
+        .select(fromSelectors.getPizzaViusalised)
+        .subscribe((pizza) => (result = pizza));
+
+      const expectedToppings = [toppings[0], toppings[1], toppings[2]];
+
+      expect(result).toEqual({ ...entities[3], toppings: expectedToppings });
+    });
+  });
+  describe('Get Toppings Loaded', () => {
+    it('should return pizza loaded state', () => {
+      let result: any;
+
+      store
+        .select(fromSelectors.getPizzasLoaded)
+        .subscribe((v) => (result = v));
+
+      expect(result).toBeFalse;
+
+      store.dispatch(fromActions.loadPizzasSuccess({ payload: pizzas }));
+
+      expect(result).toBeTrue;
+    });
+  });
+  describe('Get Toppings Loading', () => {
+    it('should return pizza loading state', () => {
+      let result: any;
+
+      store
+        .select(fromSelectors.getPizzasLoading)
+        .subscribe((v) => (result = v));
+
+      expect(result).toBeFalse;
+
+      store.dispatch(fromActions.loadPizzas());
+
+      expect(result).toBeTrue;
     });
   });
 });
